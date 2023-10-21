@@ -1074,13 +1074,15 @@ namespace WpfHexaEditor
         {
             get
             {
+                if (!CheckIsOpen(_provider))
+                    return 0;
+
                 long byteDeletedCount = 0;
-                if (CheckIsOpen(_provider) && HideByteDeleted)
+                if (HideByteDeleted)
                     byteDeletedCount = _provider.GetByteModifieds(ByteAction.Deleted).Count;
 
-                return AllowVisualByteAddress
-                          ? CheckIsOpen(_provider) ? ((VisualByteAdressLength - byteDeletedCount) / (BytePerLine * ByteSizeRatio)) + 1 : 0
-                          : CheckIsOpen(_provider) ? ((_provider.Length - byteDeletedCount) / (BytePerLine * ByteSizeRatio)) + 1 : 0;
+                var byteCount = AllowVisualByteAddress ? VisualByteAdressLength : _provider.Length;
+                return (int)Math.Ceiling((double)(byteCount - byteDeletedCount) / (BytePerLine * ByteSizeRatio));
             }
         }
 
@@ -1091,11 +1093,11 @@ namespace WpfHexaEditor
         {
             get
             {
-                var actualheight = BaseGrid.RowDefinitions[1].ActualHeight;
+                var actualheight = BaseGrid.RowDefinitions[1].Height.Value;
 
                 if (actualheight < 0) actualheight = 0;
 
-                return (int)(actualheight / (LineHeight * ZoomScale)) + 1;
+                return 21;//(int)(actualheight / (LineHeight * ZoomScale)) + 1;
             }
         }
 
@@ -2662,6 +2664,7 @@ namespace WpfHexaEditor
                     c.Visibility = Visibility.Visible;
                     c.SmallChange = 1;
                     c.LargeChange = ScrollLargeChange;
+                    c.ViewportSize = MaxScreenVisibleLine + 1;
                     c.Maximum = MaxLine - MaxVisibleLine + 1;
                 });
         #endregion
