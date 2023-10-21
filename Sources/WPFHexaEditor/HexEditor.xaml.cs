@@ -3223,30 +3223,25 @@ namespace WpfHexaEditor
         /// </summary>
         private void UpdateLinesInfo()
         {
-            var maxVisibleLine = MaxVisibleLine;
+            var linesCount = Math.Min(MaxLine, MaxVisibleLine - (VerticalScrollBar.Value >= VerticalScrollBar.Maximum ? 1 : 0));
 
-            #region If the lines are less than "visible lines" create them
+            for (var i = 0; i < linesCount; i++)
+            {
+                new FastTextLine(this).With(l =>
+                {
+                    l.Height = LineHeight;
+                    l.Foreground = ForegroundOffSetHeaderColor;
+                    l.HorizontalAlignment = HorizontalAlignment.Left;
+                    l.VerticalAlignment = VerticalAlignment.Center;
+                    l.RenderPoint = new Point(2, 2);
 
-            var linesCount = LinesInfoStackPanel.Children.Count;
+                    //Events
+                    l.MouseDown += LinesInfoLabel_MouseDown;
+                    l.MouseMove += LinesInfoLabel_MouseMove;
 
-            if (linesCount < maxVisibleLine)
-                for (var i = 0; i < maxVisibleLine - linesCount; i++)
-                    new FastTextLine(this).With(l =>
-                    {
-                        l.Height = LineHeight;
-                        l.Foreground = ForegroundOffSetHeaderColor;
-                        l.HorizontalAlignment = HorizontalAlignment.Left;
-                        l.VerticalAlignment = VerticalAlignment.Center;
-                        l.RenderPoint = new Point(2, 2);
-
-                        //Events
-                        l.MouseDown += LinesInfoLabel_MouseDown;
-                        l.MouseMove += LinesInfoLabel_MouseMove;
-
-                        LinesInfoStackPanel.Children.Add(l);
-                    });
-
-            #endregion
+                    LinesInfoStackPanel.Children.Add(l);
+                });
+            }
 
             ClearLineInfo();
 
@@ -3255,7 +3250,7 @@ namespace WpfHexaEditor
             var firstByteInLine = FirstVisibleBytePosition;
             long actualPosition = 0;
 
-            for (var i = 0; i < maxVisibleLine; i++)
+            for (var i = 0; i < linesCount; i++)
             {
                 var lineOffsetLabel = (FastTextLine)LinesInfoStackPanel.Children[i];
 
