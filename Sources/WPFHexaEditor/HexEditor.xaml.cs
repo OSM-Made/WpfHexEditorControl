@@ -1093,11 +1093,13 @@ namespace WpfHexaEditor
         {
             get
             {
-                var actualheight = BaseGrid.RowDefinitions[1].Height.Value;
+                var actualheight = BaseGrid.RowDefinitions[1].ActualHeight;
 
                 if (actualheight < 0) actualheight = 0;
 
-                return 21;//(int)(actualheight / (LineHeight * ZoomScale)) + 1;
+                var result = (int)(actualheight / (LineHeight * ZoomScale));
+
+                return result + 1;
             }
         }
 
@@ -1486,7 +1488,7 @@ namespace WpfHexaEditor
 
             //Get the new position from SelectionStart down one page
             var newPosition = GetValidPositionFrom(SelectionStart, 1);
-
+            
             if (Keyboard.Modifiers == ModifierKeys.Shift)
             {
                 SelectionStart = newPosition <= _provider.Length
@@ -1496,20 +1498,20 @@ namespace WpfHexaEditor
             else
             {
                 FixSelectionStartStop();
-
+            
                 if (newPosition < _provider.Length)
                     SelectionStart = SelectionStop = newPosition;
             }
-
+            
             if (SelectionStart >= _provider.Length)
                 SelectionStart = _provider.Length - 1;
-
+            
             if (AllowVisualByteAddress && SelectionStart > VisualByteAdressStop)
                 SelectionStart = VisualByteAdressStop;
-
+            
             if (SelectionStart > LastVisibleBytePosition)
                 VerticalScrollBar.Value++;
-
+            
             SetFocusAtSelectionStart();
         }
 
@@ -1540,7 +1542,7 @@ namespace WpfHexaEditor
             if (SelectionStart < FirstVisibleBytePosition)
                 VerticalScrollBar.Value--;
 
-            SetFocusAtSelectionStart();
+            SetFocusAtSelectionStart(true);
         }
 
         private void Control_MovePrevious(object sender, ByteEventArgs e)
@@ -2680,6 +2682,7 @@ namespace WpfHexaEditor
             if (!CheckIsOpen(_provider)) BuildDataLines(MaxVisibleLine);
 
             RefreshView(true);
+            UpdateScrollBar();
         }
 
         /// <summary>
@@ -3289,7 +3292,7 @@ namespace WpfHexaEditor
                         case DataVisualType.Hexadecimal:
                             l.Text = OffSetPanelVisual switch
                             {
-                                OffSetPanelType.OffsetOnly => $"0x{LongToHex(actualPosition, OffSetPanelFixedWidthVisual).ToUpperInvariant()}",
+                                OffSetPanelType.OffsetOnly => $"{LongToHex(actualPosition, OffSetPanelFixedWidthVisual).ToUpperInvariant()}",
                                 OffSetPanelType.LineOnly => $"ln {LongToHex(GetLineNumber(actualPosition), OffSetPanelFixedWidthVisual).ToUpperInvariant()}",
                                 OffSetPanelType.Both => $"ln {LongToHex(GetLineNumber(actualPosition), OffSetPanelFixedWidthVisual)} 0x{LongToHex(actualPosition, OffSetPanelFixedWidthVisual).ToUpperInvariant()}",
                                 _ => throw new NotImplementedException()
@@ -3411,12 +3414,12 @@ namespace WpfHexaEditor
         /// <summary>
         /// Set the focus to the selection start
         /// </summary>
-        public void SetFocusAtSelectionStart() => SetFocusAt(SelectionStart);
+        public void SetFocusAtSelectionStart(bool reverseTraversal = false) => SetFocusAt(SelectionStart, reverseTraversal);
 
         /// <summary>
         /// Set focus at position in parameter
         /// </summary>
-        private void SetFocusAt(long bytePositionInStream)
+        private void SetFocusAt(long bytePositionInStream, bool reverseTraversal = false)
         {
             if (!CheckIsOpen(_provider)) return;
             if (bytePositionInStream >= _provider.Length) return;
@@ -3432,6 +3435,13 @@ namespace WpfHexaEditor
                         if (ctrl.BytePositionInStream == bytePositionInStream)
                         {
                             ctrl.Focus();
+
+                            // Allow traversal backwards through nibbles
+                            if (reverseTraversal && ctrl.KeyDownLabel != KeyDownLabel.SecondChar)
+                            {
+                                ctrl.MoveTo(KeyDownLabel.SecondChar);
+                            }
+
                             rtn = true;
                         }
                     }, ref rtn);
@@ -4596,9 +4606,9 @@ namespace WpfHexaEditor
         /// <summary>
         /// Add byte spacer
         /// </summary>
-        private void AddByteSpacer(StackPanel stack, int colomn, bool forceEmpty = false)
+        private void AddByteSpacer(StackPanel stack, int column, bool forceEmpty = false)
         {
-            if (colomn % (int)ByteGrouping != 0 || colomn <= 0) return;
+            if (column % (int)ByteGrouping != 0 || column <= 0) return;
 
             if (!forceEmpty)
                 switch (ByteSpacerVisualStyle)

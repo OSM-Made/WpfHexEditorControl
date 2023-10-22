@@ -20,6 +20,8 @@ namespace WpfHexaEditor
 
         private KeyDownLabel _keyDownLabel = KeyDownLabel.FirstChar;
 
+        public KeyDownLabel KeyDownLabel { get => _keyDownLabel; }
+
         #endregion global class variables
 
         #region Constructor
@@ -46,6 +48,12 @@ namespace WpfHexaEditor
         {
             base.Clear();
             _keyDownLabel = KeyDownLabel.FirstChar;
+        }
+
+        public void MoveTo(KeyDownLabel key)
+        {
+            _keyDownLabel = key;
+            UpdateCaret();
         }
 
         public void UpdateDataVisualWidth() =>
@@ -113,8 +121,7 @@ namespace WpfHexaEditor
             if (e.LeftButton == MouseButtonState.Pressed && IsFocused)
             {
                 //Is focused set editing to second char.
-                _keyDownLabel = KeyDownLabel.SecondChar;
-                UpdateCaret();
+                MoveTo(KeyDownLabel.SecondChar);
             }
 
             base.OnMouseDown(e);
@@ -123,6 +130,21 @@ namespace WpfHexaEditor
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (Byte == null) return;
+
+            if (KeyValidator.IsRightKey(e.Key) && _keyDownLabel != KeyDownLabel.SecondChar)
+            {
+                e.Handled = true;
+                MoveTo(KeyDownLabel.SecondChar);
+
+                return;
+            }
+            else if (KeyValidator.IsLeftKey(e.Key) && _keyDownLabel != KeyDownLabel.FirstChar)
+            {
+                e.Handled = true;
+                MoveTo(KeyDownLabel.FirstChar);
+
+                return;
+            }
 
             if (KeyValidation(e)) return;
 
@@ -161,8 +183,7 @@ namespace WpfHexaEditor
 
         protected override void OnGotFocus(RoutedEventArgs e)
         {
-            _keyDownLabel = KeyDownLabel.FirstChar;
-            UpdateCaret();
+            MoveTo(KeyDownLabel.FirstChar);
 
             base.OnGotFocus(e);
         }

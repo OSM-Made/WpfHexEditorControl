@@ -176,6 +176,7 @@ namespace WpfHexaEditor.Core
     [Flags]
     public enum ByteSpacerGroup
     {
+        None = 1,
         TwoByte = 2,
         FourByte = 4,
         SixByte = 6,
